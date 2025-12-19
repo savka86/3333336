@@ -17,9 +17,7 @@
       --accent: #f5a524;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -41,7 +39,7 @@
     p.lead {
       margin: 0 0 28px;
       color: var(--muted);
-      max-width: 840px;
+      max-width: 940px;
     }
 
     .app {
@@ -84,7 +82,7 @@
 
     .template-list {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
       gap: 10px;
     }
 
@@ -97,7 +95,22 @@
       transition: border 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
       position: relative;
       overflow: hidden;
-      min-height: 110px;
+      min-height: 120px;
+      color: #f8fbff;
+      text-align: left;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: flex-end;
+      isolation: isolate;
+    }
+
+    .template-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,0.35));
+      z-index: 0;
     }
 
     .template-card.active {
@@ -107,12 +120,12 @@
     }
 
     .template-card span {
-      position: absolute;
-      left: 10px;
-      bottom: 10px;
+      position: relative;
+      z-index: 1;
       font-size: 12px;
-      font-weight: 600;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      font-weight: 700;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.55);
+      line-height: 1.3;
     }
 
     .file-input {
@@ -149,9 +162,7 @@
       gap: 6px;
     }
 
-    input[type="range"] {
-      accent-color: var(--primary);
-    }
+    input[type="range"] { accent-color: var(--primary); }
 
     button.action {
       background: linear-gradient(120deg, #6cd8ff, #8a7bff);
@@ -170,9 +181,7 @@
       box-shadow: 0 14px 36px rgba(108, 216, 255, 0.45);
     }
 
-    .preview {
-      position: relative;
-    }
+    .preview { position: relative; }
 
     canvas {
       width: 100%;
@@ -184,16 +193,14 @@
 
     @media (max-width: 960px) {
       body { padding: 18px; }
-      .app {
-        grid-template-columns: 1fr;
-      }
+      .app { grid-template-columns: 1fr; }
       .controls { position: relative; top: 0; }
     }
   </style>
 </head>
 <body>
   <h1>Новогодняя открытка</h1>
-  <p class="lead">Выберите понравившийся шаблон, загрузите своё фото и сохраните открытку, где вы — главный герой зимней истории.</p>
+  <p class="lead">Выберите одну из винтажных сцен, загрузите своё фото и впишите лицо в героя открытки. Масштабируйте, сдвигайте и сохраняйте результат в PNG.</p>
 
   <div class="app">
     <section class="controls">
@@ -205,7 +212,7 @@
       <div class="input-card">
         <label for="photoInput">Ваше фото</label>
         <input type="file" id="photoInput" accept="image/*" />
-        <p class="hint">Используйте снимок с хорошим освещением, чтобы герой выглядел ярко.</p>
+        <p class="hint">Используйте снимок с хорошим освещением. Лучше работают фотографии анфас.</p>
       </div>
 
       <div class="input-card">
@@ -228,6 +235,7 @@
             <input type="range" min="80" max="140" value="105" id="brightnessRange">
           </div>
         </div>
+        <p class="hint">Сдвигайте и масштабируйте, чтобы лицо совпало с отверстием на открытке.</p>
       </div>
 
       <button class="action" id="downloadBtn">Скачать открытку в PNG</button>
@@ -241,97 +249,121 @@
   <script>
     const templates = [
       {
-        id: 'aurora',
-        name: 'Полярное сияние',
-        preview: 'linear-gradient(135deg, #0b1230, #123f77 55%, #2db3ff)',
+        id: 'skiers',
+        name: 'Катание на лыжах',
+        faceSlot: { x: 0.36, y: 0.41, radiusX: 90, radiusY: 98, rotation: -6, baseSize: 290 },
+        defaults: { scale: 1.08, offsetX: -6, offsetY: -18, brightness: 1.05 },
         draw(ctx, size) {
           const { w, h } = size;
-          const gradient = ctx.createLinearGradient(0, 0, w, h);
-          gradient.addColorStop(0, '#0b1230');
-          gradient.addColorStop(0.5, '#123f77');
-          gradient.addColorStop(1, '#2db3ff');
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, w, h);
+          drawSnowyBackground(ctx, w, h, '#9cc4f2', '#dff0ff');
+          drawForest(ctx, w, h, 7, { minHeight: h * 0.22, maxHeight: h * 0.36, baseY: h * 0.72 });
+          drawHills(ctx, w, h, [{ y: h * 0.75, amplitude: 40, color: 'rgba(255,255,255,0.92)' }]);
 
-          // Light waves
-          const aurora = ctx.createLinearGradient(0, h * 0.2, w, h * 0.8);
-          aurora.addColorStop(0, 'rgba(180, 255, 255, 0.12)');
-          aurora.addColorStop(0.5, 'rgba(120, 200, 255, 0.28)');
-          aurora.addColorStop(1, 'rgba(80, 150, 255, 0.05)');
-          ctx.fillStyle = aurora;
-          ctx.beginPath();
-          ctx.moveTo(0, h * 0.6);
-          ctx.bezierCurveTo(w * 0.2, h * 0.45, w * 0.4, h * 0.75, w * 0.6, h * 0.58);
-          ctx.bezierCurveTo(w * 0.8, h * 0.42, w * 0.9, h * 0.55, w, h * 0.4);
-          ctx.lineTo(w, h);
-          ctx.lineTo(0, h);
-          ctx.closePath();
-          ctx.fill();
+          // back skier
+          ctx.save();
+          ctx.translate(w * 0.52, h * 0.48);
+          ctx.scale(0.8, 0.8);
+          drawCoat(ctx, '#4a4036', 180, 300, 0.28);
+          drawMittens(ctx, '#2c3b60', '#e4573d', -120, 20, 200, 50);
+          drawHat(ctx, { main: '#303850', brim: '#dfe8ff', top: '#dbe8ff' }, 0, -120, 110, 70);
+          ctx.restore();
 
-          drawSnow(ctx, w, h, 140, 0.7);
-          drawText(ctx, 'С Новым годом!', 'Пусть год будет ярким, как северное сияние.');
+          // front skier body (with hood cutout)
+          ctx.save();
+          ctx.translate(w * 0.34, h * 0.52);
+          drawCoat(ctx, '#7a5b3d', 240, 340, 0.32, '#ff7048');
+          drawMittens(ctx, '#d44a1a', '#143c6b', -160, 60, 260, 120);
+          ctx.restore();
+
+          drawFrostedText(ctx, 'С Новым годом!', w * 0.1, 90);
         }
       },
       {
-        id: 'ginger',
-        name: 'Имбирное печенье',
-        preview: 'linear-gradient(135deg, #2b160a, #6b3211)',
+        id: 'tree-lady',
+        name: 'Ель и хлопья',
+        faceSlot: { x: 0.43, y: 0.34, radiusX: 84, radiusY: 90, rotation: 2, baseSize: 280 },
+        defaults: { scale: 1.02, offsetX: -4, offsetY: -8, brightness: 1.08 },
         draw(ctx, size) {
           const { w, h } = size;
-          const gradient = ctx.createLinearGradient(0, 0, w, h);
-          gradient.addColorStop(0, '#2b160a');
-          gradient.addColorStop(1, '#6b3211');
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, w, h);
+          drawSnowyBackground(ctx, w, h, '#7690c4', '#dce9ff');
+          drawTree(ctx, w * 0.7, h * 0.65, 300, 6, '#165b3c');
+          drawOrnaments(ctx, w * 0.7, h * 0.65, 6, [ '#ffba4a', '#ef4f79', '#5ec5ff' ]);
+          drawHills(ctx, w, h, [ { y: h * 0.76, amplitude: 36, color: 'rgba(255,255,255,0.92)' } ]);
 
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
-          for (let i = 0; i < 16; i++) {
-            ctx.beginPath();
-            const radius = 40 + Math.random() * 30;
-            ctx.arc(Math.random() * w, Math.random() * h, radius, 0, Math.PI * 2);
-            ctx.fill();
-          }
+          ctx.save();
+          ctx.translate(w * 0.38, h * 0.46);
+          drawCoat(ctx, '#a6433f', 220, 320, 0.26, '#f3f1ed');
+          drawMittens(ctx, '#f3f1ed', '#a6433f', -130, 30, 210, 90);
+          drawHat(ctx, { main: '#c23d3a', brim: '#f3f1ed', top: '#f3f1ed' }, 0, -120, 120, 80);
+          ctx.restore();
 
-          // Decorative frame
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-          ctx.lineWidth = 6;
-          roundRect(ctx, 24, 24, w - 48, h - 48, 24);
-          ctx.stroke();
-
-          drawSnow(ctx, w, h, 90, 0.45, '#ffe9d0');
-          drawText(ctx, 'Тёплого года!', 'Пусть дома пахнет корицей, а мечты исполняются.');
+          drawFrostedText(ctx, 'С наступающим Новым годом!', w * 0.12, 110);
         }
       },
       {
-        id: 'frost',
-        name: 'Морозный узор',
-        preview: 'linear-gradient(135deg, #0f1c2f, #1e385b 60%, #7bc7ff)',
+        id: 'decorating',
+        name: 'Украшаем ёлку',
+        faceSlot: { x: 0.33, y: 0.35, radiusX: 82, radiusY: 88, rotation: 0, baseSize: 270 },
+        defaults: { scale: 1.02, offsetX: -2, offsetY: 0, brightness: 1.02 },
         draw(ctx, size) {
           const { w, h } = size;
-          const gradient = ctx.createLinearGradient(0, h, w, 0);
-          gradient.addColorStop(0, '#0f1c2f');
-          gradient.addColorStop(0.7, '#1e385b');
-          gradient.addColorStop(1, '#7bc7ff');
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, w, h);
+          drawSnowyBackground(ctx, w, h, '#7ba3c8', '#e4f3ff');
+          drawTree(ctx, w * 0.72, h * 0.68, 360, 7, '#1f6a45');
+          drawOrnaments(ctx, w * 0.72, h * 0.68, 9, [ '#f0b13f', '#ff5f52', '#48b6ff', '#ffd966' ]);
+          drawHills(ctx, w, h, [ { y: h * 0.8, amplitude: 50, color: 'rgba(255,255,255,0.95)' } ]);
 
-          // Ice shards
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
-          for (let i = 0; i < 14; i++) {
-            ctx.beginPath();
-            const x = Math.random() * w;
-            const y = Math.random() * h;
-            const width = 80 + Math.random() * 140;
-            const height = 30 + Math.random() * 60;
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + width, y + height * 0.4);
-            ctx.lineTo(x + width * 0.4, y + height);
-            ctx.closePath();
-            ctx.fill();
-          }
+          ctx.save();
+          ctx.translate(w * 0.28, h * 0.52);
+          drawCoat(ctx, '#8c5325', 210, 320, 0.25, '#d9b48f');
+          drawMittens(ctx, '#e74c3c', '#d9b48f', -120, 30, 190, 110);
+          drawScarf(ctx, '#c13d32', 0, 60, 140, 32);
+          ctx.restore();
 
-          drawSnow(ctx, w, h, 120, 0.55, '#d1ecff');
-          drawText(ctx, 'Сияющего настроения!', 'Пусть каждый день искрится, как морозный узор.');
+          drawFrostedText(ctx, 'С Новым годом!', w * 0.1, 90);
+        }
+      },
+      {
+        id: 'call',
+        name: 'Телефонный звонок',
+        faceSlot: { x: 0.36, y: 0.36, radiusX: 84, radiusY: 90, rotation: -3, baseSize: 270 },
+        defaults: { scale: 1.05, offsetX: -6, offsetY: -4, brightness: 1.06 },
+        draw(ctx, size) {
+          const { w, h } = size;
+          drawSnowyBackground(ctx, w, h, '#9bb6d6', '#e9f2ff');
+          drawHills(ctx, w, h, [ { y: h * 0.78, amplitude: 60, color: 'rgba(255,255,255,0.96)' } ]);
+
+          ctx.save();
+          ctx.translate(w * 0.32, h * 0.5);
+          drawCoat(ctx, '#aa5b2f', 230, 330, 0.24, '#f1e6cf');
+          drawMittens(ctx, '#e04c3a', '#f1e6cf', -120, 30, 200, 110);
+          drawHat(ctx, { main: '#c49b5d', brim: '#f1e6cf', top: '#f1e6cf' }, 0, -120, 130, 90);
+          drawPhone(ctx, -70, 40);
+          ctx.restore();
+
+          drawFrostedText(ctx, 'Поздравляю с Новым годом!', w * 0.1, 110);
+        }
+      },
+      {
+        id: 'santa-doll',
+        name: 'Подарок в руках',
+        faceSlot: { x: 0.52, y: 0.42, radiusX: 86, radiusY: 92, rotation: 4, baseSize: 280 },
+        defaults: { scale: 1.04, offsetX: 4, offsetY: -6, brightness: 1.04 },
+        draw(ctx, size) {
+          const { w, h } = size;
+          drawSnowyBackground(ctx, w, h, '#8cb2d5', '#e4f1ff');
+          drawHills(ctx, w, h, [ { y: h * 0.77, amplitude: 46, color: 'rgba(255,255,255,0.95)' } ]);
+          drawTree(ctx, w * 0.22, h * 0.6, 260, 6, '#1f5c3a');
+
+          // child body
+          ctx.save();
+          ctx.translate(w * 0.52, h * 0.55);
+          drawCoat(ctx, '#5a4434', 240, 340, 0.28, '#d1c3a7');
+          drawMittens(ctx, '#6f4a2f', '#d1c3a7', -150, 40, 240, 120);
+          drawHat(ctx, { main: '#3b3d4f', brim: '#d8cab2', top: '#d8cab2' }, 0, -120, 130, 90);
+          ctx.restore();
+
+          drawToySanta(ctx, w * 0.37, h * 0.56);
+          drawFrostedText(ctx, 'С Новым годом!', w * 0.12, 110);
         }
       }
     ];
@@ -347,15 +379,12 @@
     const brightnessRange = document.getElementById('brightnessRange');
     const downloadBtn = document.getElementById('downloadBtn');
 
+    templates.forEach((template) => template.previewUrl = createPreview(template));
+
     let activeTemplate = templates[0];
     let heroImage = null;
 
-    const state = {
-      scale: 1,
-      offsetX: 0,
-      offsetY: 0,
-      brightness: 1.05,
-    };
+    const state = { ...activeTemplate.defaults };
 
     function drawSnow(ctx, w, h, count, opacity = 0.6, color = '#ffffff') {
       ctx.fillStyle = color;
@@ -369,71 +398,257 @@
       ctx.globalAlpha = 1;
     }
 
-    function roundRect(ctx, x, y, width, height, radius) {
+    function drawSnowyBackground(ctx, w, h, topColor, bottomColor) {
+      const gradient = ctx.createLinearGradient(0, 0, 0, h);
+      gradient.addColorStop(0, topColor);
+      gradient.addColorStop(1, bottomColor);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#f6fbff';
+      ctx.fillRect(0, h * 0.72, w, h * 0.28);
+      drawSnow(ctx, w, h, 200, 0.7);
+    }
+
+    function drawForest(ctx, w, h, count, opts = {}) {
+      const { minHeight = 120, maxHeight = 200, baseY = h * 0.7 } = opts;
+      for (let i = 0; i < count; i++) {
+        const x = (i / (count - 1)) * w;
+        const height = minHeight + Math.random() * (maxHeight - minHeight);
+        drawTree(ctx, x, baseY, height, 5 + Math.floor(Math.random() * 3), '#1f5c3a');
+      }
+    }
+
+    function drawTree(ctx, x, baseY, height, layers, color) {
+      ctx.save();
+      ctx.translate(x, baseY);
+      const layerHeight = height / layers;
+      ctx.fillStyle = color;
+      for (let i = 0; i < layers; i++) {
+        const width = (height - i * layerHeight) * 0.9;
+        ctx.beginPath();
+        ctx.moveTo(-width / 2, -i * layerHeight);
+        ctx.lineTo(width / 2, -i * layerHeight);
+        ctx.lineTo(0, -(i + 1) * layerHeight - layerHeight * 0.1);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = '#2b1a0f';
+      ctx.fillRect(-10, 0, 20, layerHeight * 0.6);
+      ctx.restore();
+    }
+
+    function drawOrnaments(ctx, x, baseY, count, palette) {
+      ctx.save();
+      ctx.translate(x, baseY);
+      for (let i = 0; i < count; i++) {
+        const px = (Math.random() - 0.3) * 180;
+        const py = -Math.random() * 240;
+        ctx.fillStyle = palette[i % palette.length];
+        ctx.beginPath();
+        ctx.ellipse(px, py, 10 + Math.random() * 6, 14 + Math.random() * 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(px, py - 14);
+        ctx.lineTo(px, py - 28);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawHills(ctx, w, h, hills) {
+      hills.forEach(hill => {
+        const { y, amplitude, color } = hill;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        for (let x = 0; x <= w; x += 20) {
+          const offset = Math.sin((x / w) * Math.PI * 2) * amplitude;
+          ctx.lineTo(x, y + offset);
+        }
+        ctx.lineTo(w, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        ctx.fill();
+      });
+    }
+
+    function drawCoat(ctx, color, width, height, taper = 0.3, furColor) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = 2;
+      const radius = 18;
+      const topWidth = width * (1 - taper * 0.6);
+      const bottomWidth = width;
+      const x = -bottomWidth / 2;
+      const y = -height * 0.35;
       ctx.beginPath();
       ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + width - radius, y);
-      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-      ctx.lineTo(x + width, y + height - radius);
-      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + topWidth - radius, y);
+      ctx.quadraticCurveTo(x + topWidth, y, x + topWidth, y + radius);
+      ctx.lineTo(x + bottomWidth, y + height - radius);
+      ctx.quadraticCurveTo(x + bottomWidth, y + height, x + bottomWidth - radius, y + height);
       ctx.lineTo(x + radius, y + height);
       ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
       ctx.lineTo(x, y + radius);
       ctx.quadraticCurveTo(x, y, x + radius, y);
       ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      if (furColor) {
+        ctx.fillStyle = furColor;
+        ctx.beginPath();
+        ctx.roundRect(x + width * 0.18, y + height * 0.02, topWidth * 0.64, height * 0.18, 14);
+        ctx.fill();
+      }
     }
 
-    function drawText(ctx, title, subtitle) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.font = '48px "Playfair Display", "Times New Roman", serif';
-      ctx.shadowColor = 'rgba(0,0,0,0.35)';
-      ctx.shadowBlur = 14;
-      ctx.fillText(title, 80, 120);
+    function drawMittens(ctx, handColor, trimColor, leftOffsetX, leftOffsetY, rightOffsetX, rightOffsetY) {
+      const drawSingle = (x, y, flip = 1) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(flip, 1);
+        ctx.fillStyle = handColor;
+        ctx.beginPath();
+        ctx.roundRect(-36, -20, 72, 90, 26);
+        ctx.fill();
+        ctx.fillStyle = trimColor;
+        ctx.roundRect(-36, 50, 72, 18, 10);
+        ctx.fill();
+        ctx.restore();
+      };
+      drawSingle(leftOffsetX, leftOffsetY, 1);
+      drawSingle(rightOffsetX, rightOffsetY, -1);
+    }
 
-      ctx.font = '22px "Inter", sans-serif';
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = 'rgba(240, 247, 255, 0.9)';
-      ctx.fillText(subtitle, 82, 160);
+    function drawHat(ctx, colors, x, y, width, height) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = colors.main;
+      ctx.beginPath();
+      ctx.roundRect(-width / 2, -height / 2, width, height * 0.8, 28);
+      ctx.fill();
+      ctx.fillStyle = colors.brim;
+      ctx.roundRect(-width / 2 - 6, height * 0.1, width + 12, height * 0.3, 18);
+      ctx.fill();
+      ctx.fillStyle = colors.top;
+      ctx.beginPath();
+      ctx.arc(0, -height * 0.55, height * 0.12, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
 
-    function drawPlaceholder(ctx, centerX, centerY, radius) {
+    function drawScarf(ctx, color, x, y, width, height) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = color;
+      ctx.roundRect(-width / 2, -height / 2, width, height, 16);
+      ctx.fill();
+      ctx.roundRect(-width * 0.15, height / 2 - 6, width * 0.22, height * 0.9, 12);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawPhone(ctx, x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = '#1b2a3f';
+      ctx.roundRect(-26, -26, 52, 96, 12);
+      ctx.fill();
+      ctx.fillStyle = '#f1e6cf';
+      ctx.beginPath();
+      ctx.arc(0, -16, 14, 0, Math.PI * 2);
+      ctx.arc(0, 26, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawToySanta(ctx, x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = '#e33d3d';
+      ctx.beginPath();
+      ctx.roundRect(-46, -70, 92, 150, 26);
+      ctx.fill();
+      ctx.fillStyle = '#f2efe6';
+      ctx.roundRect(-52, 40, 104, 22, 10);
+      ctx.fill();
+      ctx.fillStyle = '#f2efe6';
+      ctx.beginPath();
+      ctx.arc(0, -40, 28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#c22727';
+      ctx.beginPath();
+      ctx.moveTo(-36, -40);
+      ctx.lineTo(36, -40);
+      ctx.lineTo(0, -80);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#f2efe6';
+      ctx.beginPath();
+      ctx.arc(12, -76, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawFrostedText(ctx, text, x, y) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.shadowColor = 'rgba(0,0,0,0.4)';
+      ctx.shadowBlur = 8;
+      ctx.font = '48px "Playfair Display", "Times New Roman", serif';
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function drawPlaceholder(ctx, radiusX, radiusY) {
       ctx.save();
       ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
       ctx.beginPath();
-      ctx.arc(centerX, centerY - radius * 0.2, radius * 0.35, 0, Math.PI * 2);
+      ctx.arc(0, -radiusY * 0.15, Math.min(radiusX, radiusY) * 0.38, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(centerX, centerY + radius * 0.35, radius * 0.5, Math.PI, 0);
+      ctx.ellipse(0, radiusY * 0.25, radiusX * 0.56, radiusY * 0.42, 0, Math.PI, 0);
       ctx.fill();
       ctx.restore();
     }
 
-    function drawHero(ctx) {
+    function drawHero(ctx, slot, scaleFactor) {
       const { scale, offsetX, offsetY, brightness } = state;
-      const centerX = canvas.width * 0.72 + offsetX;
-      const centerY = canvas.height * 0.62 + offsetY;
-      const baseSize = 380;
-      const radius = 190;
+      const width = ctx.canvas.width;
+      const height = ctx.canvas.height;
+      const ratioToMain = scaleFactor || (canvas ? width / canvas.width : 1);
+      const centerX = width * slot.x + offsetX * ratioToMain;
+      const centerY = height * slot.y + offsetY * ratioToMain;
+      const baseSize = (slot.baseSize || 260) * ratioToMain;
+      const radiusX = (slot.radiusX || slot.radius || 120) * ratioToMain;
+      const radiusY = (slot.radiusY || slot.radius || 120) * ratioToMain;
+      const rotation = (slot.rotation || 0) * Math.PI / 180;
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(rotation);
 
       ctx.save();
       ctx.shadowColor = 'rgba(0,0,0,0.28)';
       ctx.shadowBlur = 24;
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, radiusX + 6, radiusY + 6, 0, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
       ctx.fill();
       ctx.restore();
 
       ctx.save();
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius - 10, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, radiusX - 6, radiusY - 6, 0, 0, Math.PI * 2);
       ctx.closePath();
       ctx.clip();
 
@@ -441,40 +656,41 @@
         const ratio = heroImage.height / heroImage.width;
         const drawW = baseSize * scale;
         const drawH = drawW * ratio;
-        const x = centerX - drawW / 2;
-        const y = centerY - drawH / 2;
+        const x = -drawW / 2;
+        const y = -drawH / 2;
 
         ctx.filter = `brightness(${brightness})`;
         ctx.drawImage(heroImage, x, y, drawW, drawH);
         ctx.filter = 'none';
       } else {
-        drawPlaceholder(ctx, centerX, centerY, radius - 16);
+        drawPlaceholder(ctx, radiusX - 10, radiusY - 10);
       }
 
       ctx.restore();
 
-      // ring
       ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-      ctx.lineWidth = 6;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.lineWidth = 5;
       ctx.setLineDash([10, 6]);
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius - 8, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, radiusX - 8, radiusY - 8, 0, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
+
       ctx.restore();
     }
 
     function render() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       activeTemplate.draw(ctx, { w: canvas.width, h: canvas.height });
-      drawHero(ctx);
+      drawHero(ctx, activeTemplate.faceSlot);
     }
 
     function createTemplateCards() {
       templates.forEach(template => {
         const card = document.createElement('button');
         card.className = 'template-card';
-        card.style.backgroundImage = template.preview;
+        card.style.backgroundImage = `url(${template.previewUrl})`;
         card.setAttribute('data-id', template.id);
         const label = document.createElement('span');
         label.textContent = template.name;
@@ -495,10 +711,19 @@
       });
     }
 
+    function applyStateToSliders() {
+      scaleRange.value = Math.round(state.scale * 100);
+      offsetXRange.value = state.offsetX;
+      offsetYRange.value = state.offsetY;
+      brightnessRange.value = Math.round(state.brightness * 100);
+    }
+
     function selectTemplate(id) {
       const found = templates.find(t => t.id === id);
       if (found) {
         activeTemplate = found;
+        Object.assign(state, found.defaults);
+        applyStateToSliders();
         highlightActive();
         render();
       }
@@ -528,11 +753,23 @@
 
     downloadBtn.addEventListener('click', () => {
       const link = document.createElement('a');
-      link.download = `новогодняя-открытка-${activeTemplate.id}.png`;
+      link.download = `винтажная-открытка-${activeTemplate.id}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     });
 
+    function createPreview(template) {
+      const previewCanvas = document.createElement('canvas');
+      previewCanvas.width = 200;
+      previewCanvas.height = 140;
+      const previewCtx = previewCanvas.getContext('2d');
+      const ratio = previewCanvas.width / canvas.width;
+      template.draw(previewCtx, { w: previewCanvas.width, h: previewCanvas.height });
+      drawHero(previewCtx, template.faceSlot, ratio);
+      return previewCanvas.toDataURL('image/png');
+    }
+
+    applyStateToSliders();
     createTemplateCards();
     render();
   </script>
